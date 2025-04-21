@@ -2,7 +2,6 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-import cv2
 
 # Load model (replace with your actual model file)
 MODEL_PATH = "model.h5"
