@@ -15,25 +15,38 @@ IMG_SIZE = (256, 256)
 
 # Title
 st.title("Lung Cancer Detection from CT Scan")
-st.write("Upload a CT scan image to check for lung cancer classification.")
+st.write("Upload multiple CT scan images to check for lung cancer classification.")
 
-# Upload image
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
-if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Uploaded Image", use_column_width=True)
+# Upload multiple images
+uploaded_files = st.file_uploader("Choose images...", type=["jpg", "png", "jpeg"], accept_multiple_files=True)
+if uploaded_files:
+    # Preprocess images
+    images = []
+    for uploaded_file in uploaded_files:
+        image = Image.open(uploaded_file).convert("RGB")
+        images.append(image)
 
-    # Preprocess
-    image = image.resize(IMG_SIZE)
-    img_array = np.array(image)
-    img_array = img_array / 255.0  # Normalize
-    img_array = np.expand_dims(img_array, axis=0)  # (1, H, W, C)
+    # Display images
+    for img in images:
+        st.image(img, caption="Uploaded Image", use_column_width=True)
 
-    # Predict
-    prediction = model.predict(img_array)
-    predicted_class = class_names[np.argmax(prediction)]
-    confidence = np.max(prediction)
+    # Resize and normalize images
+    img_arrays = []
+    for img in images:
+        img = img.resize(IMG_SIZE)
+        img_array = np.array(img)
+        img_array = img_array / 255.0  # Normalize
+        img_arrays.append(img_array)
 
-    # Output
-    st.subheader("Prediction:")
-    st.success(f"**{predicted_class}** ({confidence*100:.2f}% confidence)")
+    # Stack all images into a single batch (batch_size, height, width, channels)
+    img_batch = np.stack(img_arrays, axis=0)
+
+    # Predict in batch
+    predictions = model.predict(img_batch)
+
+    # Output predictions for each image
+    for i, prediction in enumerate(predictions):
+        predicted_class = class_names[np.argmax(prediction)]
+        confidence = np.max(prediction)
+        st.subheader(f"Prediction for Image {i + 1}:")
+        st.success(f"**{predicted_class}** ({confidence * 100:.2f}% confidence)")
